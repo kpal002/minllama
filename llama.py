@@ -43,8 +43,13 @@ class RMSNorm(torch.nn.Module):
         Returns:
             torch.Tensor: The normalized tensor.
         """
-        # todo
-        raise NotImplementedError
+        norm_x = x.norm(2, dim=-1, keepdim=True)
+        d_x = x.shape[1]
+        rms_x = torch.sqrt(norm_x * d_x + self.eps)
+        x_normed = x/rms_x
+
+        return x_normed
+
 
     def forward(self, x):
         """
@@ -93,8 +98,19 @@ class Attention(nn.Module):
         Make sure to use attention_dropout (self.attn_dropout) on the computed
         attention matrix before applying it to the value tensor.
         '''
-        # todo
-        raise NotImplementedError
+        d_k = query.size(-1)
+        matmul_qk = torch.matmul(query, key.transpose(-2, -1)) 
+
+        # scale matmul_qk
+        scaled_attention_logits = matmul_qk / torch.sqrt(d_k)
+
+
+        attention_weights = torch.nn.functional.softmax(scaled_attention_logits, axis = -1) 
+        attention_weights = self.attn_dropout(attention_weights)
+        output = torch.matmul(attention_weights, value) 
+    
+        return output
+        
 
     def forward(
         self,
